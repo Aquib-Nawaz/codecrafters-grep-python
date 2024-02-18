@@ -5,27 +5,71 @@ import sys
 
 specialCharactersToValueMap = {}
 
-def match_literals(input_line, literal):
-    if len(literal)==1:
-        return literal in input_line
+def get_literals_from_pattern(pattern):
+    i=0;
+    literals = []
+    while i < len(pattern):
+        if pattern[i] == '\\':
+            literals.append(pattern[i:i+2])
+            i+=2
+        elif pattern[i] == '[':
+            end_index = pattern.find(']', i)
+            literals.append(pattern[i:i+end_index+1])
+            i = end_index+1
+        else:
+            literals.append(pattern[i])
+            i+=1
+    return literals
+
+def get_real_values(literal):
+
     literal_values = []
-    if(literal[0]=='['):
-        if(literal[1] == '^'):
-            non_literal_values = [x for x in literal[2:-1]]
+
+    if len(literal)==1:
+        literal_values = [literal]
+
+    elif literal[0]=='[':
+        if literal[1] == '^':
+            sub_literals = get_literals_from_pattern(literal[2:-1])
+
+            non_literal_values = []
+
+            for x in sub_literals:
+                non_literal_values += get_real_values(x)
+            non_literal_values = set(non_literal_values)
+
             literal_values = [chr(i) for i in range(256) if chr(i) not in non_literal_values]
         else:
-            literal_values = [x for x in literal[1:-1]]
+            sub_literals = get_literals_from_pattern(literal[1:-1])
+            literal_values = []
+            for x in sub_literals:
+                literal_values += get_real_values(x)
+            literal_values = set(literal_values)
     else:
         literal_values = specialCharactersToValueMap.get(literal, [])
-    for c in literal_values:
-        if c in input_line:
-            return True
-    return False
 
+    return literal_values
+
+def recursive_regex_match(input_line, input_idx, pattern, pattern_idx):
+    if pattern_idx == len(pattern):
+        return True
+    if pattern[pattern_idx] == ['$']:
+        return input_idx == len(input_line) and pattern_idx == len(pattern)-1
+    if input_idx == len(input_line) :
+        return False
+    return input_line[input_idx] in pattern[pattern_idx] and recursive_regex_match(input_line, input_idx+1,
+                                                                                   pattern, pattern_idx+1)
 
 def match_pattern(input_line, pattern):
+    pattern_values = [get_real_values(literal) for literal in get_literals_from_pattern(pattern)]
+    if pattern_values[0] == ['^']:
+        return recursive_regex_match(input_line, 0, pattern_values, 1)
+    else:
+        for i in range(len(input_line)):
+            if recursive_regex_match(input_line, i, pattern_values, 0):
+                return True
+        return False
 
-    return match_literals(input_line, pattern)
     # else:
     #     raise RuntimeError(f"Unhandled pattern: {pattern}")
 
@@ -39,6 +83,7 @@ def main():
     specialCharactersToValueMap["\\w"] += [chr(i) for i in range(ord('A'), ord('Z')+1)]
     specialCharactersToValueMap["\\w"] += [chr(i) for i in range(ord('0'), ord('9')+1)]
     specialCharactersToValueMap["\\w"] += ["_"]
+    specialCharactersToValueMap["\\\\"] = ["\\"]
     if sys.argv[1] != "-E":
         print("Expected first argument to be '-E'")
         exit(1)
