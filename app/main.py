@@ -12,7 +12,7 @@ def match_literals(input_line, literal):
     if(literal[0]=='['):
         if(literal[1] == '^'):
             non_literal_values = [x for x in literal[2:-1]]
-            literal_values = [chr(i) for i in range(256) if i not in non_literal_values]
+            literal_values = [chr(i) for i in range(256) if chr(i) not in non_literal_values]
         else:
             literal_values = [x for x in literal[1:-1]]
     else:
