@@ -58,7 +58,7 @@ def get_real_values(literal):
         literal_values.append('(')
         for sub_group in sub_groups:
             literal_values.append([get_real_values(literal) for literal in get_literals_from_pattern(sub_group)])
-        print(literal_values)
+        print(literal_values)#13
     else:
         literal_values = specialCharactersToValueMap.get(literal, [])
 
