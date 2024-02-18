@@ -16,6 +16,10 @@ def get_literals_from_pattern(pattern):
             end_index = pattern.find(']', i)
             literals.append(pattern[i:i+end_index+1])
             i = end_index+1
+        elif pattern[i] == '(':
+            end_index = pattern.find(')', i)
+            literals.append(pattern[i:i+end_index+1])
+            i = end_index+1
         else:
             literals.append(pattern[i])
             i+=1
@@ -46,7 +50,15 @@ def get_real_values(literal):
             literal_values = []
             for x in sub_literals:
                 literal_values += get_real_values(x)
-            literal_values = set(literal_values)
+            literal_values = list(set(literal_values))
+
+    elif literal[0]=='(':
+        sub_groups = literal[1:-1].split('|')
+        literal_values.append('(')
+        for sub_group in sub_groups:
+            literal_values.append([get_real_values(literal) for literal in get_literals_from_pattern(sub_group)])
+        print(literal_values)
+
     else:
         literal_values = specialCharactersToValueMap.get(literal, [])
 
@@ -54,10 +66,18 @@ def get_real_values(literal):
 
 def recursive_regex_match(input_line, input_idx, pattern, pattern_idx):
     if pattern_idx == len(pattern):
-        return True
+        return input_idx
     if pattern[pattern_idx] == ['$']:
-        return input_idx == len(input_line) and pattern_idx == len(pattern)-1
+        if input_idx == len(input_line) and pattern_idx == len(pattern)-1:
+            return input_idx
     if input_idx == len(input_line) :
+        return False
+
+    if pattern[pattern_idx][0] == '(':
+        for i in range(1, len(pattern[pattern_idx])):
+            subgroup_idx = recursive_regex_match(input_line, input_idx, pattern[pattern_idx][i], 0)
+            if subgroup_idx:
+                return recursive_regex_match(input_line, subgroup_idx, pattern, pattern_idx+1)
         return False
 
     if input_line[input_idx] in pattern[pattern_idx]:
