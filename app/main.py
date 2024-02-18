@@ -8,7 +8,15 @@ specialCharactersToValueMap = {}
 def match_literals(input_line, literal):
     if len(literal)==1:
         return literal in input_line
-    literal_values = specialCharactersToValueMap.get(literal, [])
+    literal_values = []
+    if(literal[0]=='['):
+        if(literal[1] == '^'):
+            non_literal_values = [x for x in literal[2:-1]]
+            literal_values = [chr(i) for i in range(256) if i not in non_literal_values]
+        else:
+            literal_values = [x for x in literal[1:-1]]
+    else:
+        literal_values = specialCharactersToValueMap.get(literal, [])
     for c in literal_values:
         if c in input_line:
             return True
