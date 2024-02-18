@@ -27,7 +27,10 @@ def main():
     input_line = sys.stdin.read()
 
     specialCharactersToValueMap["\\d"] = [str(i) for i in range(10)]
-
+    specialCharactersToValueMap["\\w"] = [chr(i) for i in range(ord('a'), ord('z')+1)]
+    specialCharactersToValueMap["\\w"] += [chr(i) for i in range(ord('A'), ord('Z')+1)]
+    specialCharactersToValueMap["\\w"] += [chr(i) for i in range(ord('0'), ord('9')+1)]
+    specialCharactersToValueMap["\\w"] += ["_"]
     if sys.argv[1] != "-E":
         print("Expected first argument to be '-E'")
         exit(1)
