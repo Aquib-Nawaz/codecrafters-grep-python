@@ -24,8 +24,10 @@ def get_literals_from_pattern(pattern):
 def get_real_values(literal):
 
     literal_values = []
+    if literal == '.':
+        literal_values = [chr(i) for i in range(256)]
 
-    if len(literal)==1:
+    elif len(literal)==1:
         literal_values = [literal]
 
     elif literal[0]=='[':
