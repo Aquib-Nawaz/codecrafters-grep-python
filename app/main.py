@@ -4,6 +4,7 @@ import sys
 # import lark - available if you need it!
 
 specialCharactersToValueMap = {}
+back_references = []
 
 def get_literals_from_pattern(pattern):
     i=0;
@@ -14,11 +15,11 @@ def get_literals_from_pattern(pattern):
             i+=2
         elif pattern[i] == '[':
             end_index = pattern.find(']', i)
-            literals.append(pattern[i:i+end_index+1])
+            literals.append(pattern[i:end_index+1])
             i = end_index+1
         elif pattern[i] == '(':
             end_index = pattern.find(')', i)
-            literals.append(pattern[i:i+end_index+1])
+            literals.append(pattern[i:end_index+1])
             i = end_index+1
         else:
             literals.append(pattern[i])
@@ -58,7 +59,6 @@ def get_real_values(literal):
         for sub_group in sub_groups:
             literal_values.append([get_real_values(literal) for literal in get_literals_from_pattern(sub_group)])
         print(literal_values)
-
     else:
         literal_values = specialCharactersToValueMap.get(literal, [])
 
@@ -77,7 +77,18 @@ def recursive_regex_match(input_line, input_idx, pattern, pattern_idx):
         for i in range(1, len(pattern[pattern_idx])):
             subgroup_idx = recursive_regex_match(input_line, input_idx, pattern[pattern_idx][i], 0)
             if subgroup_idx:
-                return recursive_regex_match(input_line, subgroup_idx, pattern, pattern_idx+1)
+                back_references.append(input_line[input_idx:subgroup_idx])
+                to_ret = recursive_regex_match(input_line, subgroup_idx, pattern, pattern_idx+1)
+                back_references.pop();
+                return to_ret
+        return False
+
+    if pattern[pattern_idx][0] == '\\' and len(pattern[pattern_idx])>1 and pattern[pattern_idx][1].isnumeric():
+        group_num = int(pattern[pattern_idx][1])
+        new_pattern = [[x] for x in back_references[group_num-1]]
+        subgroup_idx = recursive_regex_match(input_line, input_idx, new_pattern, 0)
+        if subgroup_idx:
+            return recursive_regex_match(input_line, subgroup_idx, pattern, pattern_idx+1)
         return False
 
     if input_line[input_idx] in pattern[pattern_idx]:
@@ -121,6 +132,8 @@ def main():
     specialCharactersToValueMap["\\w"] += [chr(i) for i in range(ord('0'), ord('9')+1)]
     specialCharactersToValueMap["\\w"] += ["_"]
     specialCharactersToValueMap["\\\\"] = ["\\"]
+    for i in range(10):
+        specialCharactersToValueMap['\\'+str(i)] = '\\'+str(i)
     if sys.argv[1] != "-E":
         print("Expected first argument to be '-E'")
         exit(1)
